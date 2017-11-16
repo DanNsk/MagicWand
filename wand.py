@@ -93,13 +93,17 @@ def Scan():
             if (framep is None):
                 framep = frame.copy()
 
-            cntrsp = ProcessNewPoints(framep, frame, cntrsp, cntrs)
+
             framep = frame
 
-            ProcessPointsToGestures()
+            if (cntrs.any()):
+                cntrsp = ProcessNewPoints(framep, frame, cntrsp, cntrs)
 
-            CleanupPointsToGestures(cntrs[np.where(~np.isnan(cntrs[:, 5]))][:, 5].astype(int))
+                ProcessPointsToGestures()
 
+                CleanupPointsToGestures(cntrs[np.where(~np.isnan(cntrs[:, 5]))][:, 5].astype(int))
+            else:
+                cntrsp = None
 
 
     except KeyboardInterrupt:
@@ -222,10 +226,10 @@ def ProcessNewPoints(frame0, frame1, cntrs0, cntrs1):
                 cv2.putText(frame, str(new[5]), (int(new[0]), int(new[1]) + 15), cv2.FONT_HERSHEY_SIMPLEX, .45, (0,255,0))
                 cv2.putText(frame, str(c[2]), (int(new[0]), int(new[1]) - 15), cv2.FONT_HERSHEY_SIMPLEX, .45, (255,0,0))
 
-        #cv2.imshow("preview", frame)
+        cv2.imshow("preview", frame)
         #cv2.waitKey(int(1000/24*3))
         #cv2.waitKey(0)
-        #cv2.waitKey(1)
+        cv2.waitKey(1)
 
     return cntrs1
 
