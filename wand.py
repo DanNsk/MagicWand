@@ -2,6 +2,7 @@
 
 
 import sys
+import os
 import numpy as np
 import cv2
 import math
@@ -18,26 +19,19 @@ from collections import deque
 
 
 
-if (platform.system() != "Windows"):
-    from picamera import PiCamera
-    cam =  PiCamera()
-    cam.resolution = (640, 480)
-    cam.framerate = 24
-    cam.exposure_mode = "fixedfps"
-    sleep(1)
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 
-else:
-    cam = cv2.VideoCapture("pivideo.mp4")
-
-    cv2.startWindowThread()
-    cv2.namedWindow("preview")
-
+cam =  PiCamera(resolution=(640, 480), framerate=24, sensor_mode=6)
+cam.exposure_mode = 'fixedfps'
+rawcam = PiRGBArray(cam)
+sleep(0.1)
 
 mindist = 5.0
 mindistactive = 15.0
 directions = 8
-commandkeys = ['4321076', '0123456']
-commands = ['Woot!' , 'Woot1!']
+commandkeys = ['4321076', '0123456', '1360']
+commands = ['Woot!' , 'Woot1!', 'W00t1']
 
 
 counter = 0
@@ -54,26 +48,22 @@ def ClosestPointOnLine(a, b, p):
 
 
 def CaptureFrame():
+    ds = datetime.datetime.now()
+
     try:
-        if (platform.system() != "Windows"):
-            stream = BytesIO()
-            cam.capture(stream, format="jpeg")
-            stream.seek(0)
-            data = np.fromstring(stream.getvalue(), dtype=np.uint8)
-            frame = cv2.imdecode(data, 1)
-        else:
-            ret, frame = cam.read()# dumb way to skip some frames, just for test purposes
-            ret, frame = cam.read()
-            ret, frame = cam.read()
-            ret, frame = cam.read()
-            ret, frame = cam.read()
-            ret, frame = cam.read()
+        rawcam.truncate(0)
+        cam.capture(rawcam, "bgr")
+        frame = rawcam.array
 
         if (not(frame is None)):
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
+        cv2.imwrite("1.jpg", frame)
+    except KeyboardInterrupt:
+        raise
     except:
         return None
+
+    #print ((datetime.datetime.now() - ds).microseconds)
 
 
     frame = cv2.flip(frame,0)
@@ -84,26 +74,19 @@ def CaptureFrame():
 def Scan():
     try:
         cntrsp = np.array([])
-        framep = None
         while(1):
-            frame, cntrs = FindNewPoints()
-            if (frame is None):
-                break
-
-            if (framep is None):
-                framep = frame.copy()
+            cntrs = FindNewPoints()
 
 
-            framep = frame
-
-            if (cntrs.any()):
-                cntrsp = ProcessNewPoints(framep, frame, cntrsp, cntrs)
+            if (not(cntrs is None) and cntrs.any()):
+                cntrsp = ProcessNewPoints(cntrsp, cntrs)
 
                 ProcessPointsToGestures()
 
                 CleanupPointsToGestures(cntrs[np.where(~np.isnan(cntrs[:, 5]))][:, 5].astype(int))
             else:
                 cntrsp = np.array([])
+                CleanupPointsToGestures(cntrsp)
 
 
     except KeyboardInterrupt:
@@ -134,7 +117,7 @@ def ProcessPointsToGestures():
         ccmd = None
 
         pts = np.array(pts)
-        (mag, ang) = cv2.cartToPolar(pts[:,0], pts[:,1], angleInDegrees=True)
+        (mag, ang) = cv2.cartToPolar(-pts[:,1], pts[:,0], angleInDegrees=True)
         portion = (360.0/directions)
 
         ang = (((ang + portion / 2) / portion).astype(int) % directions).astype(str)
@@ -166,10 +149,9 @@ def CleanupPointsToGestures(cntrs):
 
 
 
-def ProcessNewPoints(frame0, frame1, cntrs0, cntrs1):
+def ProcessNewPoints(cntrs0, cntrs1):
     global points, counter0, counter, mindistactive
 
-    frame = cv2.cvtColor(frame1, cv2.COLOR_GRAY2BGR)
 
     if (cntrs0.any()):
         dists = []
@@ -222,30 +204,19 @@ def ProcessNewPoints(frame0, frame1, cntrs0, cntrs1):
                 else:
                     pointarr.append([new[3], new[4]])
 
-                cv2.line(frame,(int(old[0]), int(old[1])) , (int(new[0]), int(new[1])), (0,0,255), 1)
-                cv2.putText(frame, str(new[5]), (int(new[0]), int(new[1]) + 15), cv2.FONT_HERSHEY_SIMPLEX, .45, (0,255,0))
-                cv2.putText(frame, str(c[2]), (int(new[0]), int(new[1]) - 15), cv2.FONT_HERSHEY_SIMPLEX, .45, (255,0,0))
-
-        if (platform.system() == "Windows"):
-            cv2.imshow("preview", frame)
-            cv2.waitKey(1)
-
     return cntrs1
 
 def FindNewPoints():
     frame = CaptureFrame()
 
     if (frame is None):
-        return (None, None)
-
-    origFrame = frame.copy()
+        return None
 
     frame = cv2.threshold(frame, 180, 255, cv2.THRESH_BINARY)[1]
 
     labels = measure.label(frame, connectivity=2, background=0)
 
     contrs = []
-
 
     for label in np.unique(labels):
         if label == 0:
@@ -267,14 +238,11 @@ def FindNewPoints():
             if (radius > 1.1):
                 contrs.append([cX, cY, radius, 0, 0, None])
 
-    return (origFrame, np.array(contrs, np.float32))
+    return  np.array(contrs, np.float32)
 
 
 
 def End():
-    #global points
-    #print (points)
-    if (platform.system() != "Windows"):
-        cam.close()
+    cam.close()
 
 Scan()
