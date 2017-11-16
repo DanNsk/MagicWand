@@ -61,7 +61,7 @@ def CaptureFrame():
             data = np.fromstring(stream.getvalue(), dtype=np.uint8)
             frame = cv2.imdecode(data, 1)
         else:
-            ret, frame = cam.read()
+            ret, frame = cam.read()# dumb way to skip some frames, just for test purposes
             ret, frame = cam.read()
             ret, frame = cam.read()
             ret, frame = cam.read()
