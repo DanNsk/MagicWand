@@ -103,7 +103,7 @@ def Scan():
 
                 CleanupPointsToGestures(cntrs[np.where(~np.isnan(cntrs[:, 5]))][:, 5].astype(int))
             else:
-                cntrsp = None
+                cntrsp = np.array([])
 
 
     except KeyboardInterrupt:
@@ -244,6 +244,7 @@ def FindNewPoints():
     labels = measure.label(frame, connectivity=2, background=0)
 
     contrs = []
+
 
     for label in np.unique(labels):
         if label == 0:
