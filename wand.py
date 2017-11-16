@@ -29,8 +29,8 @@ if (platform.system() != "Windows"):
 else:
     cam = cv2.VideoCapture("pivideo.mp4")
 
-cv2.startWindowThread()
-cv2.namedWindow("preview")
+    cv2.startWindowThread()
+    cv2.namedWindow("preview")
 
 
 mindist = 5.0
@@ -226,8 +226,9 @@ def ProcessNewPoints(frame0, frame1, cntrs0, cntrs1):
                 cv2.putText(frame, str(new[5]), (int(new[0]), int(new[1]) + 15), cv2.FONT_HERSHEY_SIMPLEX, .45, (0,255,0))
                 cv2.putText(frame, str(c[2]), (int(new[0]), int(new[1]) - 15), cv2.FONT_HERSHEY_SIMPLEX, .45, (255,0,0))
 
-        cv2.imshow("preview", frame)
-        cv2.waitKey(1)
+        if (platform.system() == "Windows"):
+            cv2.imshow("preview", frame)
+            cv2.waitKey(1)
 
     return cntrs1
 
