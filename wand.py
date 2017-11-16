@@ -227,8 +227,6 @@ def ProcessNewPoints(frame0, frame1, cntrs0, cntrs1):
                 cv2.putText(frame, str(c[2]), (int(new[0]), int(new[1]) - 15), cv2.FONT_HERSHEY_SIMPLEX, .45, (255,0,0))
 
         cv2.imshow("preview", frame)
-        #cv2.waitKey(int(1000/24*3))
-        #cv2.waitKey(0)
         cv2.waitKey(1)
 
     return cntrs1
