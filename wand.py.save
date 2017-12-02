@@ -3,7 +3,6 @@
 
 import sys
 import os
-import re
 import numpy as np
 import cv2
 import math
@@ -20,25 +19,18 @@ from collections import deque
 
 
 
-from pivideostream import PiVideoStream
+from pivideostreamex import PiVideoStreamEx
 
-def ConvFrame(frame):
-    if (not(frame is None)):
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite("2.jpg", frame)
-        frame = cv2.threshold(frame, 150, 255, cv2.THRESH_BINARY)[1]
-        cv2.imwrite("1.jpg", frame)
-    return frame
-
-vs = PiVideoStream(resolution=(640, 480), framerate=12, vflip=True, func = ConvFrame)
-vs.camera.exposure_mode = 'fixedfps'
+vs = PiVideoStreamEx(resolution=(640, 480), framerate=30, vflip=True)
 vs = vs.start()
+
+print ('1')
 
 mindist = 5.0
 mindistactive = 15.0
 directions = 8
-commands = {'0413':'Woot!', '0404':'Woot1!', '1313': 'W00t1'}
-commandscompiled = dict(zip(commands.keys(), [re.compile(k) for k in commands.keys()]))
+commandkeys = ['4321076', '0123456', '1360']
+commands = ['Woot!' , 'Woot1!', 'W00t1']
 
 
 counter = 0
@@ -60,11 +52,16 @@ def CaptureFrame():
     try:
         frame = vs.read()
 
+        if (not(frame is None)):
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     except KeyboardInterrupt:
         raise
     except:
         #return None
         raise
+
+
+    frame = cv2.flip(frame,0)
 
     return frame
 
@@ -79,7 +76,7 @@ def Scan():
             print ((datetime.datetime.now() - ds).microseconds / 1000)
 
 
-            if (not(cntrs is None) and cntrs.any()):
+            """if (not(cntrs is None) and cntrs.any()):
                 cntrsp = ProcessNewPoints(cntrsp, cntrs)
 
                 ProcessPointsToGestures()
@@ -87,7 +84,7 @@ def Scan():
                 CleanupPointsToGestures(cntrs[np.where(~np.isnan(cntrs[:, 5]))][:, 5].astype(int))
             else:
                 cntrsp = np.array([])
-                CleanupPointsToGestures(cntrsp)
+                CleanupPointsToGestures(cntrsp)"""
 
 
     except KeyboardInterrupt:
@@ -96,8 +93,8 @@ def Scan():
     exit
 
 def RecognizeCommand(cmd):
-    for k in commands.keys():
-        if (commandscompiled[k].match(cmd)):
+    for i,k in enumerate(commandkeys):
+        if (k in cmd):
             return commands[i]
 
     return None
@@ -126,7 +123,7 @@ def ProcessPointsToGestures():
             ccmd = c
             cmd = cmd + c[0]
 
-        print (i, cmd)
+        #print (i, cmd)
 
         recognizedcmd = RecognizeCommand(cmd)
 
@@ -210,27 +207,37 @@ def FindNewPoints():
     if (frame is None):
         return None
 
+    frame = cv2.threshold(frame, 180, 255, cv2.THRESH_BINARY)[1]
+
+    #global frCount
+    #print (frCount)
+    #frCount = frCount + 1
+
+    #cv2.imwrite(str(frCount) + ".jpg", frame)
 
     labels = measure.label(frame, connectivity=2, background=0)
 
     contrs = []
-    uniques = zip(*np.unique(labels, return_counts=True))
 
-    for (label, counts) in uniques:
-        if (label == 0 or counts < 5 or counts > 2000):
+    for label in np.unique(labels):
+        if label == 0:
             continue
 
-        labelMask = np.zeros(frame.shape, dtype="uint8")
+        #labelMask = np.zeros(frame.shape, dtype="uint8")
 
-        labelMask[labels == label] = 255
+        #labelMask[labels == label] = 255
+        numPixels = cv2.countNonZero(labelMask)
 
-        cnts = cv2.findContours(labelMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cnts = cnts[1]
+        """if (numPixels < 150):
+            cnts = cv2.findContours(labelMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cnts = cnts[0] if imutils.is_cv2() else cnts[1]
 
-        c = contours.sort_contours(cnts)[0][0]
+            c = contours.sort_contours(cnts)[0][0]
 
-        ((cX, cY), radius) = cv2.minEnclosingCircle(c)
-        contrs.append([cX, cY, radius, 0, 0, None])
+            ((cX, cY), radius) = cv2.minEnclosingCircle(c)
+
+            if (radius > 1.1):
+                contrs.append([cX, cY, radius, 0, 0, None])"""
 
     return  np.array(contrs, np.float32)
 
