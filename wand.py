@@ -32,9 +32,10 @@ vs = PiVideoStream(resolution=(640, 480), framerate=12, vflip=True, func = ConvF
 vs.camera.exposure_mode = 'fixedfps'
 vs = vs.start()
 
-mindist = 5.0
-mindistactive = 15.0
-directions = 8
+mindist = 7.0 #min distance for initial move
+mindistactive = 15.0 #min distance for the move 
+
+directions = 8 #there will be only 8 possible move directions with 0 - straigt up, 4 straight down 2 - right, 6 - left
 
 commands = {
    '[701]{1,2}[345]{1,2}[701]{1,2}[345]{1,2}':'Woot!', #m - like symbol
