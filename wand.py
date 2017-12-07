@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 
 import sys
@@ -25,9 +25,7 @@ from pivideostream import PiVideoStream
 def ConvFrame(frame):
     if (not(frame is None)):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite("2.jpg", frame)
         frame = cv2.threshold(frame, 150, 255, cv2.THRESH_BINARY)[1]
-        cv2.imwrite("1.jpg", frame)
     return frame
 
 vs = PiVideoStream(resolution=(640, 480), framerate=12, vflip=True, func = ConvFrame)
@@ -37,7 +35,8 @@ vs = vs.start()
 mindist = 5.0
 mindistactive = 15.0
 directions = 8
-commands = {'0413':'Woot!', '0404':'Woot1!', '1313': 'W00t1'}
+
+commands = {'[701]{1,2}[345]{1,2}[701]{1,2}[345]{1,2}':'Woot!'}
 commandscompiled = dict(zip(commands.keys(), [re.compile(k) for k in commands.keys()]))
 
 
@@ -45,13 +44,6 @@ counter = 0
 counter0 = 0
 
 points = deque([])
-
-#def ClosestPointOnLine(a, b, p):
-#    ap = p-a
-#    ab = b-a
-#    result = a + np.dot(ap,ab)/np.dot(ab,ab) * ab
-#    return result
-
 
 frCount = 0
 
@@ -76,8 +68,8 @@ def Scan():
             ds = datetime.datetime.now()
 
             cntrs = FindNewPoints()
-            print ((datetime.datetime.now() - ds).microseconds / 1000)
 
+            print ((datetime.datetime.now() - ds).microseconds / 1000)
 
             if (not(cntrs is None) and cntrs.any()):
                 cntrsp = ProcessNewPoints(cntrsp, cntrs)
@@ -97,8 +89,8 @@ def Scan():
 
 def RecognizeCommand(cmd):
     for k in commands.keys():
-        if (commandscompiled[k].match(cmd)):
-            return commands[i]
+        if (commandscompiled[k].search(cmd)):
+            return commands[k]
 
     return None
 
