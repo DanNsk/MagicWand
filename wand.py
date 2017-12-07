@@ -36,7 +36,11 @@ mindist = 5.0
 mindistactive = 15.0
 directions = 8
 
-commands = {'[701]{1,2}[345]{1,2}[701]{1,2}[345]{1,2}':'Woot!'}
+commands = {
+   '[701]{1,2}[345]{1,2}[701]{1,2}[345]{1,2}':'Woot!', #m - like symbol
+   '[01]{1,2}[23]{1,2}[45]{1,2}[67]{1,2}':'Woot2!', #circle cw
+   '[67]{1,2}[45]{1,2}[23]{1,2}[01]{1,2}':'Woot4!' #circle ccw
+}
 commandscompiled = dict(zip(commands.keys(), [re.compile(k) for k in commands.keys()]))
 
 
@@ -69,7 +73,7 @@ def Scan():
 
             cntrs = FindNewPoints()
 
-            print ((datetime.datetime.now() - ds).microseconds / 1000)
+            #print ((datetime.datetime.now() - ds).microseconds / 1000) #debug - frame processing time
 
             if (not(cntrs is None) and cntrs.any()):
                 cntrsp = ProcessNewPoints(cntrsp, cntrs)
@@ -118,7 +122,7 @@ def ProcessPointsToGestures():
             ccmd = c
             cmd = cmd + c[0]
 
-        print (i, cmd)
+        #print (i, cmd) #print accumulated commands
 
         recognizedcmd = RecognizeCommand(cmd)
 
